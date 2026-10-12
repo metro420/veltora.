@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StockFlow — Inventory Management</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <section id="loginScreen" class="login-screen">
+    <form id="loginForm" class="login-card">
+      <div class="logo">SF</div>
+      <p class="muted">INVENTORY MANAGEMENT</p>
+      <h1>StockFlow</h1>
+      <p class="muted">Kelola stok dan penjualan dengan mudah.</p>
+      <label>Username</label>
+      <input id="loginUsername" value="admin" required autocomplete="username">
+      <label>Password</label>
+      <input id="loginPassword" type="password" value="admin123" required autocomplete="current-password">
+      <p id="loginError" class="error"></p>
+      <button class="btn primary full">Masuk</button>
+      <p class="help">Admin: admin / admin123<br>Kasir: kasir / kasir123</p>
+    </form>
+  </section>
+
+  <div id="app" class="layout hidden">
+    <aside class="sidebar">
+      <a class="brand" href="#" data-page="dashboard"><span class="logo">SF</span><span>StockFlow<small>Inventory workspace</small></span></a>
+      <div class="profile"><div class="avatar" id="avatar">A</div><div><b id="sideUsername">Admin</b><small id="sideRole">Administrator</small></div></div>
+
+      <nav id="navigation">
+        <p class="nav-label">WORKSPACE</p>
+        <button class="nav-item active" data-page="dashboard">▦ Dashboard</button>
+        <button class="nav-item" data-page="products">□ Produk</button>
+        <button class="nav-item admin-only" data-page="suppliers">♧ Supplier</button>
+        <button class="nav-item admin-only" data-page="purchases">⇩ Pembelian & Stok Masuk</button>
+        <button class="nav-item" data-page="checkout">▣ Checkout</button>
+        <button class="nav-item" data-page="sales">↗ Riwayat Penjualan</button>
+        <button class="nav-item" data-page="movements">↕ Pergerakan Stok</button>
+        <p class="nav-label">LAINNYA</p>
+        <button class="nav-item admin-only" data-page="reports">▤ Laporan & Grafik</button>
+        <button class="nav-item admin-only" data-page="users">♙ Pengguna</button>
+        <button class="nav-item admin-only" data-page="backup">⚙ Backup & Pengaturan</button>
+      </nav>
+      <button id="logoutBtn" class="btn ghost full">Keluar ↪</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><p class="muted eyebrow">INVENTORY CONTROL CENTER</p><h1 id="pageTitle">Dashboard</h1></div>
+        <div class="top-actions"><span id="topUser"></span><button id="themeBtn" class="btn ghost">☾ Dark Mode</button></div>
+      </header>
+
+      <section id="page-dashboard" class="page active">
+        <div class="page-heading"><div><h2>Ringkasan bisnis</h2><p class="muted">Pantau persediaan dan aktivitas terbaru.</p></div><span id="todayLabel" class="chip"></span></div>
+        <div class="stats">
+          <article class="stat"><span>Total Produk</span><strong id="statProducts">0</strong><small>Jenis produk</small></article>
+          <article class="stat"><span>Total Stok</span><strong id="statStock">0</strong><small>Unit tersedia</small></article>
+          <article class="stat"><span>Stok Menipis</span><strong id="statLow">0</strong><small>Perlu restock</small></article>
+          <article class="stat"><span>Penjualan Hari Ini</span><strong id="statRevenue">Rp0</strong><small>Transaksi hari ini</small></article>
+        </div>
+        <div class="columns">
+          <article class="panel"><h3>Produk perlu restock</h3><div id="lowStockList"></div></article>
+          <article class="panel"><h3>Aktivitas terbaru</h3><div id="recentActivity"></div></article>
+        </div>
+      </section>
+
+      <section id="page-products" class="page">
+        <div class="page-heading"><div><h2>Produk</h2><p class="muted">Kelola barang, harga, dan persediaan.</p></div><button id="addProductBtn" class="btn primary admin-only">+ Tambah Produk</button></div>
+        <div id="productFormPanel" class="panel hidden">
+          <div class="panel-heading"><h3 id="productFormTitle">Tambah Produk</h3><button class="btn ghost" data-close="productFormPanel">Tutup</button></div>
+          <form id="productForm" class="form-grid">
+            <input id="productId" type="hidden">
+            <div><label>SKU / Kode</label><input id="productSku" required></div>
+            <div><label>Nama produk</label><input id="productName" required></div>
+            <div><label>Kategori</label><input id="productCategory" required></div>
+            <div><label>Harga modal (Rp)</label><input id="productCost" type="number" min="0" step="1" required></div>
+            <div><label>Harga jual (Rp)</label><input id="productPrice" type="number" min="0" step="1" required></div>
+            <div><label>Stok awal</label><input id="productStock" type="number" min="0" step="1" required></div>
+            <div><label>Stok minimum</label><input id="productMin" type="number" min="0" step="1" value="5" required></div>
+            <div class="form-actions"><button class="btn primary">Simpan Produk</button><button type="button" class="btn ghost" data-close="productFormPanel">Batal</button></div>
+          </form>
+        </div>
+        <div class="panel">
+          <div class="toolbar"><input id="productSearch" placeholder="Cari nama atau SKU..."><select id="productCategoryFilter"><option value="">Semua kategori</option></select></div>
+          <div class="table-wrap"><table><thead><tr><th>Produk</th><th>Kategori</th><th>Modal</th><th>Harga jual</th><th>Stok</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="productTable"></tbody></table></div>
+        </div>
+      </section>
+
+      <section id="page-suppliers" class="page">
+        <div class="page-heading"><div><h2>Manajemen supplier</h2><p class="muted">Data pemasok barang.</p></div><button id="addSupplierBtn" class="btn primary">+ Tambah Supplier</button></div>
+        <div id="supplierFormPanel" class="panel hidden">
+          <h3 id="supplierFormTitle">Tambah Supplier</h3>
+          <form id="supplierForm" class="form-grid">
+            <input id="supplierId" type="hidden">
+            <div><label>Nama supplier</label><input id="supplierName" required></div>
+            <div><label>Nama kontak</label><input id="supplierContact"></div>
+            <div><label>Telepon</label><input id="supplierPhone"></div>
+            <div><label>Email</label><input id="supplierEmail" type="email"></div>
+            <div class="span-2"><label>Alamat</label><textarea id="supplierAddress"></textarea></div>
+            <div class="form-actions"><button class="btn primary">Simpan Supplier</button><button type="button" class="btn ghost" data-close="supplierFormPanel">Batal</button></div>
+          </form>
+        </div>
+        <div class="panel"><div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Kontak</th><th>Telepon</th><th>Email</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="supplierTable"></tbody></table></div></div>
+      </section>
+
+      <section id="page-purchases" class="page">
+        <div class="page-heading"><div><h2>Pembelian & stok masuk</h2><p class="muted">Pembelian yang disimpan akan menambah stok.</p></div></div>
+        <div class="panel"><h3>Catat pembelian</h3>
+          <form id="purchaseForm" class="form-grid">
+            <div><label>Tanggal</label><input id="purchaseDate" type="date" required></div>
+            <div><label>Supplier</label><select id="purchaseSupplier" required></select></div>
+            <div><label>Produk</label><select id="purchaseProduct" required></select></div>
+            <div><label>Jumlah masuk</label><input id="purchaseQty" type="number" min="1" step="1" value="1" required></div>
+            <div><label>Harga modal per unit</label><input id="purchaseCost" type="number" min="0" step="1" required></div>
+            <div class="form-actions"><button class="btn primary">Simpan Pembelian</button></div>
+          </form>
+        </div>
+        <div class="panel"><h3>Riwayat pembelian</h3><div class="table-wrap"><table><thead><tr><th>Nomor</th><th>Tanggal</th><th>Supplier</th><th>Produk</th><th>Jumlah</th><th>Modal/unit</th><th>Total</th><th>Petugas</th></tr></thead><tbody id="purchaseTable"></tbody></table></div></div>
+      </section>
+
+      <section id="page-checkout" class="page">
+        <div class="page-heading"><div><h2>Checkout</h2><p class="muted">Satu transaksi dapat berisi banyak produk.</p></div></div>
+        <div class="columns checkout-layout">
+          <div class="panel">
+            <h3>Tambah produk</h3>
+            <form id="cartAddForm" class="inline-form"><div class="grow"><label>Produk</label><select id="cartProduct" required></select></div><div class="qty"><label>Jumlah</label><input id="cartQty" type="number" min="1" step="1" value="1" required></div><button class="btn primary">Tambah</button></form>
+            <div class="table-wrap"><table><thead><tr><th>Produk</th><th>Harga</th><th>Qty</th><th>Subtotal</th><th>Aksi</th></tr></thead><tbody id="cartTable"></tbody></table></div>
+            <button id="clearCartBtn" class="btn ghost">Kosongkan keranjang</button>
+          </div>
+          <div class="panel">
+            <h3>Ringkasan pembayaran</h3>
+            <div class="summary"><span>Subtotal</span><b id="checkoutSubtotal">Rp0</b></div>
+            <label>Diskon (Rp)</label><input id="saleDiscount" type="number" min="0" step="1" value="0">
+            <label>Pajak (%)</label><input id="saleTax" type="number" min="0" max="100" step="0.1" value="0">
+            <div class="summary"><span>Pajak</span><b id="checkoutTax">Rp0</b></div>
+            <div class="summary total"><span>Total</span><b id="checkoutTotal">Rp0</b></div>
+            <label>Uang diterima (Rp)</label><input id="salePaid" type="number" min="0" step="1" value="0">
+            <div class="summary"><span>Kembalian</span><b id="saleChange">Rp0</b></div>
+            <button id="checkoutBtn" class="btn primary full">Selesaikan Penjualan</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-sales" class="page">
+        <div class="page-heading"><div><h2>Riwayat penjualan</h2><p class="muted">Lihat transaksi dan cetak invoice.</p></div><button id="exportSalesBtn" class="btn ghost">Ekspor CSV</button></div>
+        <div class="panel"><div class="toolbar"><input id="salesSearch" placeholder="Cari invoice atau kasir..."><input id="salesDateFilter" type="date"></div><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Tanggal</th><th>Kasir</th><th>Unit</th><th>Subtotal</th><th>Diskon</th><th>Pajak</th><th>Total</th><th>Aksi</th></tr></thead><tbody id="salesTable"></tbody></table></div></div>
+      </section>
+
+      <section id="page-movements" class="page">
+        <div class="page-heading"><div><h2>Pergerakan stok</h2><p class="muted">Riwayat stok masuk dan keluar.</p></div><button id="exportMovementsBtn" class="btn ghost">Ekspor CSV</button></div>
+        <div class="panel"><div class="toolbar"><input id="movementSearch" placeholder="Cari produk atau referensi..."><select id="movementType"><option value="">Semua jenis</option><option value="initial">Stok awal</option><option value="purchase">Pembelian</option><option value="sale">Penjualan</option></select></div><div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Produk</th><th>Jenis</th><th>Perubahan</th><th>Sebelum</th><th>Sesudah</th><th>Referensi</th><th>Pengguna</th></tr></thead><tbody id="movementTable"></tbody></table></div></div>
+      </section>
+
+      <section id="page-reports" class="page">
+        <div class="page-heading"><div><h2>Laporan & grafik</h2><p class="muted">Ringkasan transaksi dan persediaan.</p></div><button id="exportReportBtn" class="btn ghost">Ekspor laporan</button></div>
+        <div class="stats"><article class="stat"><span>Total penjualan</span><strong id="reportRevenue">Rp0</strong></article><article class="stat"><span>Transaksi</span><strong id="reportCount">0</strong></article><article class="stat"><span>Unit terjual</span><strong id="reportUnits">0</strong></article><article class="stat"><span>Nilai persediaan</span><strong id="reportInventory">Rp0</strong></article></div>
+        <div class="columns"><article class="panel"><h3>Penjualan 7 hari</h3><div id="salesChart" class="chart"></div></article><article class="panel"><h3>Produk terlaris</h3><div id="topProductsChart" class="chart"></div></article></div>
+        <div class="panel"><h3>Ringkasan persediaan</h3><div class="table-wrap"><table><thead><tr><th>SKU</th><th>Produk</th><th>Kategori</th><th>Stok</th><th>Modal</th><th>Nilai stok</th><th>Status</th></tr></thead><tbody id="inventoryReportTable"></tbody></table></div></div>
+      </section>
+
+      <section id="page-users" class="page">
+        <div class="page-heading"><div><h2>Pengguna</h2><p class="muted">Pengaturan akun demo dan role.</p></div><button id="addUserBtn" class="btn primary">+ Pengguna</button></div>
+        <div id="userFormPanel" class="panel hidden"><form id="userForm" class="form-grid"><div><label>Username</label><input id="newUsername" minlength="3" required></div><div><label>Password</label><input id="newPassword" type="password" minlength="4" required></div><div><label>Role</label><select id="newUserRole"><option value="cashier">Kasir</option><option value="admin">Admin</option></select></div><div class="form-actions"><button class="btn primary">Buat Pengguna</button></div></form></div>
+        <div class="panel"><div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="userTable"></tbody></table></div></div>
+        <p class="notice">Login dan role ini hanya untuk demo lokal, bukan mekanisme keamanan produksi.</p>
+      </section>
+
+      <section id="page-backup" class="page">
+        <div class="page-heading"><div><h2>Backup & pengaturan</h2><p class="muted">Simpan dan pulihkan data aplikasi.</p></div></div>
+        <div class="columns">
+          <div class="panel"><h3>Backup / Import</h3><p class="muted">Backup mencakup produk, supplier, transaksi, stok, pengguna, dan pengaturan.</p><button id="backupBtn" class="btn primary full">Unduh Backup JSON</button><button id="importBtn" class="btn ghost full">Import JSON</button><input id="importFile" type="file" accept=".json,application/json" class="hidden"><button id="resetDemoBtn" class="btn danger full">Reset Data Demo</button></div>
+          <div class="panel"><h3>Pengaturan transaksi</h3><label>Pajak default (%)</label><input id="defaultTax" type="number" min="0" max="100" step="0.1" value="0"><button id="saveSettingsBtn" class="btn primary">Simpan Pengaturan</button></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="invoiceModal" class="modal hidden">
+    <div class="modal-card"><div class="modal-toolbar"><b>Invoice / Struk</b><div><button id="printInvoiceBtn" class="btn primary">Cetak</button><button id="closeInvoiceBtn" class="btn ghost">Tutup</button></div></div><div id="invoiceContent" class="invoice-paper"></div></div>
+  </div>
+  <div id="toast" class="toast"></div>
+  <script src="assets/app.js"></script>
+</body>
+</html>
